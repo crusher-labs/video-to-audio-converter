@@ -25,4 +25,4 @@ A fast and simple web tool to extract MP3 audio from video files entirely in you
 ## **Live Tool**
 
 You can access the live tool here:
-👉 [**Video to Audio Converter**](https://itxcrusher.github.io/video-to-audio-converter/)
+👉 [**Video to Audio Converter**](https://crusher-labs.github.io/video-to-audio-converter/)
