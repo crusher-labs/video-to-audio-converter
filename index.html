@@ -45,13 +45,13 @@
     </script>
     <!-- Crusher UI Kit: published static contract -->
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/crusher-ui-kit@0.1.1/dist/crusher-ui.min.css">
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/crusher-ui-kit@0.1.1/dist/themes/glass.css">
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/crusher-ui-kit@0.1.1/dist/themes/brutal.css">
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/crusher-ui-kit@0.1.1/dist/themes/neumorph.css">
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/crusher-ui-kit@0.1.1/dist/themes/neobrutal.css">
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/crusher-ui-kit@0.1.1/dist/themes/minimal.css">
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/crusher-ui-kit@0.1.1/dist/themes/futuristic.css">
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/crusher-ui-kit@0.1.1/dist/themes/bento.css">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/crusher-ui-kit@0.1.1/src/css/themes/glass.css">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/crusher-ui-kit@0.1.1/src/css/themes/brutal.css">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/crusher-ui-kit@0.1.1/src/css/themes/neumorph.css">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/crusher-ui-kit@0.1.1/src/css/themes/neobrutal.css">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/crusher-ui-kit@0.1.1/src/css/themes/minimal.css">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/crusher-ui-kit@0.1.1/src/css/themes/futuristic.css">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/crusher-ui-kit@0.1.1/src/css/themes/bento.css">
     <style id="crusher-tools-framework-bridge">
         :root {
             --crusher-style-switcher-top: var(--crusher-spacing-6);
@@ -188,8 +188,10 @@
         const loadFFmpeg = async () => {
             if (ffmpeg) return;
             
-            // Create the engine instance with logging enabled
-            ffmpeg = createFFmpeg({ log: false });
+            ffmpeg = createFFmpeg({
+                log: false,
+                corePath: 'https://unpkg.com/@ffmpeg/core@0.10.0/dist/ffmpeg-core.js'
+            });
 
             spinner.classList.remove('hidden');
             try {
@@ -284,8 +286,7 @@
         });
         updateIcons();
 
-        // Start loading immediately
-        loadFFmpeg();
+        log("Select a video file to load the conversion engine.");
     </script>
     
     <a href="https://tools.muhammadhassaanjaved.com/" id="hub-bubble" title="View All Tools" target="_blank" rel="noopener noreferrer">
