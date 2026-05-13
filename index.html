@@ -1,222 +1,201 @@
 <!DOCTYPE html>
-<html lang="en" class="h-full" data-theme="minimal" data-theme-lock="minimal" data-mode="light">
+<html lang="en"
+      data-default-theme="minimal"
+      data-theme-lock="minimal"
+      data-default-mode="light"
+      data-default-brand="#0ea5e9">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Video to Audio Converter</title>
-    
+
     <script src="coi-serviceworker.js"></script>
-    
-    <script src="https://cdn.tailwindcss.com"></script>
-    <script>
-        tailwind.config = {
-            darkMode: 'class',
-        }
-    </script>
+
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
-    
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@500&display=swap" rel="stylesheet">
+
     <script src="https://unpkg.com/@ffmpeg/ffmpeg@0.10.1/dist/ffmpeg.min.js"></script>
 
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/crusher-ui-kit@0.1.6/dist/crusher-ui.min.css">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/crusher-ui-kit@0.1.6/dist/themes/minimal.css">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/crusher-ui-kit@0.1.6/dist/static/tool-shell.css">
+    <script defer src="https://cdn.jsdelivr.net/npm/crusher-ui-kit@0.1.6/dist/static/tool-shell.js"></script>
     <style>
         body { font-family: 'Inter', sans-serif; }
-        .log-area::-webkit-scrollbar { width: 8px; }
-        .log-area::-webkit-scrollbar-track { background: transparent; }
-        .log-area::-webkit-scrollbar-thumb { background-color: #cbd5e1; border-radius: 4px; }
-        .dark .log-area::-webkit-scrollbar-thumb { background-color: #475569; }
-        
-        #hub-bubble {
-            position: fixed; bottom: 20px; right: 20px; z-index: 1000;
-            width: 56px; height: 56px;
-            background-color: #0ea5e9; border-radius: 50%;
-            display: flex; align-items: center; justify-content: center;
-            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
-            transition: transform 0.2s ease-in-out, background-color 0.2s ease-in-out;
+
+        .v2a-stack { display: grid; gap: var(--crusher-spacing-6); max-width: 36rem; margin-inline: auto; }
+        .v2a-section { padding: var(--crusher-spacing-6); display: grid; gap: var(--crusher-spacing-5); }
+        .v2a-field { display: grid; gap: var(--crusher-spacing-2); }
+        .v2a-label {
+            font-size: var(--crusher-font-size-sm);
+            color: var(--crusher-text-secondary);
         }
-        #hub-bubble:hover { transform: scale(1.1); background-color: #0284c7; }
+        input[type="file"].crusher-tool-control { padding: var(--crusher-spacing-2); cursor: pointer; }
+        .v2a-status-row { display: flex; align-items: center; justify-content: space-between; gap: var(--crusher-spacing-2); }
+        .v2a-status {
+            block-size: 8rem;
+            overflow-y: auto;
+            padding: var(--crusher-spacing-3);
+            font-family: 'JetBrains Mono', monospace;
+            font-size: var(--crusher-font-size-xs);
+            line-height: var(--crusher-line-height-relaxed);
+            color: var(--crusher-text-primary);
+            background: var(--crusher-background-muted);
+            border: 1px solid var(--crusher-border-primary);
+            border-radius: var(--crusher-radius-lg);
+            white-space: pre-wrap;
+        }
+        .v2a-status::-webkit-scrollbar { width: 8px; }
+        .v2a-status::-webkit-scrollbar-track { background: transparent; }
+        .v2a-status::-webkit-scrollbar-thumb {
+            background-color: var(--crusher-border-primary);
+            border-radius: var(--crusher-radius-sm);
+        }
+        .v2a-log-line { margin-block-end: var(--crusher-spacing-1); }
+        .v2a-log-success { color: #16a34a; }
+        .v2a-log-error { color: #dc2626; }
+        .v2a-spinner {
+            display: none;
+            inline-size: 1rem; block-size: 1rem;
+            color: var(--crusher-color-brand-primary);
+            animation: v2a-spin 0.8s linear infinite;
+        }
+        .v2a-spinner[data-visible="true"] { display: inline-flex; }
+        @keyframes v2a-spin { to { transform: rotate(360deg); } }
+        .v2a-downloads { display: grid; gap: var(--crusher-spacing-3); }
+        .v2a-download {
+            display: inline-flex; align-items: center; justify-content: center;
+            gap: var(--crusher-spacing-2);
+            padding-inline: var(--crusher-spacing-4); padding-block: var(--crusher-spacing-3);
+            font-weight: 600;
+            text-decoration: none;
+            text-align: center;
+            border-radius: var(--crusher-radius-lg);
+        }
     </style>
-    <script>
-        if ((() => { try { const prefs = JSON.parse(localStorage.getItem('crusher_prefs') || '{}'); return localStorage.getItem('crusher_tools_mode_contract') === 'style-switcher-v3' && prefs.mode === 'dark'; } catch { return false; } })()) {
-          document.documentElement.classList.add('dark'); document.documentElement.setAttribute('data-mode', 'dark')
-        } else {
-          document.documentElement.classList.remove('dark'); document.documentElement.setAttribute('data-mode', 'light')
-        }
-    </script>
-    <!-- Crusher UI Kit: published static contract -->
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/crusher-ui-kit@0.1.3/dist/crusher-ui.min.css">
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/crusher-ui-kit@0.1.3/dist/themes/minimal.css">
-    <style id="crusher-tools-framework-bridge">
-        :root {
-            --crusher-style-switcher-top: var(--crusher-spacing-6);
-            --crusher-style-switcher-width: 16.5rem;
-            --crusher-style-switcher-bg: color-mix(in srgb, var(--crusher-background-surface) 94%, transparent);
-            --crusher-style-switcher-shadow: var(--crusher-shadow-xl);
-            --crusher-style-switcher-icon-shadow: var(--crusher-shadow-md);
-            --crusher-style-switcher-color-gap: var(--crusher-spacing-2);
-            --crusher-style-switcher-color-justify: flex-start;
-        }
-        html[data-mode="dark"] { color-scheme: dark; }
-                #theme-toggle { display: none !important; }
-        body {
-            background:
-                radial-gradient(circle at top left, color-mix(in srgb, var(--crusher-color-brand-primary) 14%, transparent), transparent 28rem),
-                var(--crusher-background-canvas) !important;
-            color: var(--crusher-text-primary) !important;
-        }
-        h1, h2, h3 { color: var(--crusher-text-primary) !important; }
-        p, label, .text-slate-400, .text-slate-500, .text-slate-600, .dark\:text-slate-400, .dark\:text-slate-500 {
-            color: var(--crusher-text-secondary) !important;
-        }
-        .text-sky-400, .text-sky-500, .dark\:text-sky-400,
-        a:not(.tool-card):not(#hub-bubble) {
-            color: var(--crusher-color-brand-primary) !important;
-        }
-        .tool-card,
-        main.bg-white,
-        .bg-white,
-        .bg-slate-50,
-        .bg-slate-100,
-        .dark .dark\:bg-slate-700,
-        .dark .dark\:bg-slate-800 {
-            background-color: var(--crusher-background-surface) !important;
-            border-color: var(--crusher-border-primary) !important;
-            box-shadow: var(--crusher-shadow-lg) !important;
-        }
-        input, textarea, select,
-        .dark .dark\:bg-slate-700:is(input, textarea, select) {
-            background-color: var(--crusher-background-muted) !important;
-            color: var(--crusher-text-primary) !important;
-            border-color: var(--crusher-border-primary) !important;
-        }
-        input:focus, textarea:focus, select:focus {
-            border-color: var(--crusher-color-brand-primary) !important;
-            box-shadow: 0 0 0 var(--crusher-focus-width) color-mix(in srgb, var(--crusher-color-brand-primary) 26%, transparent) !important;
-        }
-        button:not(#theme-toggle):not(.style-switcher-toggler):not(.day-night):not(.swatch):not(.dialect-btn),
-        .case-btn {
-            background-color: color-mix(in srgb, var(--crusher-color-brand-primary) 12%, var(--crusher-background-surface)) !important;
-            color: var(--crusher-text-primary) !important;
-            border-color: color-mix(in srgb, var(--crusher-color-brand-primary) 28%, var(--crusher-border-primary)) !important;
-        }
-        button:not(#theme-toggle):not(.style-switcher-toggler):not(.day-night):not(.swatch):not(.dialect-btn):hover,
-        .case-btn:hover,
-        .tool-card:hover {
-            background-color: color-mix(in srgb, var(--crusher-color-brand-primary) 18%, var(--crusher-background-surface)) !important;
-            border-color: var(--crusher-color-brand-primary) !important;
-        }
-        #hub-bubble {
-            background-color: var(--crusher-color-brand-primary) !important;
-            box-shadow: var(--crusher-shadow-lg) !important;
-        }
-        #hub-bubble:hover {
-            background-color: color-mix(in srgb, var(--crusher-color-brand-primary) 82%, black) !important;
-            transform: translateY(-2px) scale(1.03) !important;
-        }
-</style>
 </head>
-<body class="bg-slate-50 dark:bg-slate-900 text-slate-800 dark:text-slate-200 flex flex-col items-center justify-center min-h-screen p-4 antialiased transition-colors duration-300">
+<body class="crusher-tool-page">
 
-    <div class="absolute top-4 right-4 sm:top-6 sm:right-6 z-10">
-        <button id="theme-toggle" type="button" class="bg-white dark:bg-slate-800 p-3 rounded-full text-slate-500 dark:text-slate-400 hover:text-sky-500 hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors shadow-md">
-            <svg id="theme-toggle-sun-icon" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="hidden"><circle cx="12" cy="12" r="4"/><path d="M12 2v2"/><path d="M12 20v2"/><path d="m4.93 4.93 1.41 1.41"/><path d="m17.66 17.66 1.41 1.41"/><path d="M2 12h2"/><path d="M20 12h2"/><path d="m6.34 17.66-1.41 1.41"/><path d="m19.07 4.93-1.41 1.41"/></svg>
-            <svg id="theme-toggle-moon-icon" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="hidden"><path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9Z"/></svg>
-        </button>
-    </div>
-
-    <div class="w-full max-w-lg bg-white dark:bg-slate-800 rounded-xl shadow-xl dark:shadow-2xl border border-slate-200 dark:border-slate-700">
-        <header class="text-center p-6 border-b border-slate-200 dark:border-slate-700">
-            <h1 class="text-2xl font-bold text-slate-900 dark:text-white">Video to Audio</h1>
-            <p class="text-slate-500 dark:text-slate-400 mt-1">Convert video files to MP3 locally.</p>
+    <main class="crusher-tool-shell">
+        <header class="crusher-tool-header">
+            <h1 class="crusher-tool-title">Video to Audio</h1>
+            <p class="crusher-tool-lede">Convert video files to MP3 locally.</p>
         </header>
 
-        <main class="p-6 md:p-8 space-y-6">
-            <div class="space-y-2">
-                <label for="uploader" class="block text-sm font-medium text-slate-500 dark:text-slate-400">Select Video Files</label>
-                <input type="file" id="uploader" multiple accept="video/*" class="block w-full text-sm text-slate-500 dark:text-slate-400
-                    file:mr-4 file:py-2.5 file:px-4
-                    file:rounded-full file:border-0
-                    file:text-sm file:font-semibold
-                    file:bg-sky-50 file:text-sky-700
-                    dark:file:bg-slate-700 dark:file:text-sky-400
-                    hover:file:bg-sky-100 dark:hover:file:bg-slate-600
-                    cursor-pointer border border-slate-300 dark:border-slate-600 rounded-lg p-1 bg-slate-50 dark:bg-slate-900 focus:outline-none"
-                />
-            </div>
-
-            <div class="space-y-2">
-                <div class="flex justify-between items-center">
-                    <label class="block text-sm font-medium text-slate-500 dark:text-slate-400">Status</label>
-                    <span id="spinner" class="hidden text-sky-500 animate-spin">
-                         <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a9 9 0 1 1-6.219-8.56"/></svg>
-                    </span>
+        <div class="v2a-stack">
+            <section class="crusher-tool-surface v2a-section">
+                <div class="v2a-field">
+                    <label for="uploader" class="v2a-label">Select Video Files</label>
+                    <input type="file" id="uploader" multiple accept="video/*" class="crusher-tool-control">
                 </div>
-                <div id="status" class="log-area h-32 w-full bg-slate-100 dark:bg-slate-900 rounded-lg p-3 text-xs font-mono text-slate-600 dark:text-slate-300 overflow-y-auto border border-slate-200 dark:border-slate-700 whitespace-pre-wrap">Initializing engine...</div>
-            </div>
 
-            <div id="downloads" class="space-y-3"></div>
-        </main>
-    </div>
+                <div class="v2a-field">
+                    <div class="v2a-status-row">
+                        <span class="v2a-label">Status</span>
+                        <span id="spinner" class="v2a-spinner" aria-hidden="true">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a9 9 0 1 1-6.219-8.56"/></svg>
+                        </span>
+                    </div>
+                    <div id="status" class="v2a-status">Initializing engine...</div>
+                </div>
+
+                <div id="downloads" class="v2a-downloads"></div>
+            </section>
+        </div>
+    </main>
+
+    <template id="download-btn-template">
+        <a class="crusher-tool-action v2a-download" download>
+            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" x2="12" y1="15" y2="3"/></svg>
+            <span class="v2a-download-label"></span>
+        </a>
+    </template>
+
+    <a href="https://tools.muhammadhassaanjaved.com/" id="hub-bubble" class="crusher-tool-fab" title="View All Tools" target="_blank" rel="noopener noreferrer">
+        <svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <rect x="3" y="3" width="7" height="7"></rect>
+            <rect x="14" y="3" width="7" height="7"></rect>
+            <rect x="14" y="14" width="7" height="7"></rect>
+            <rect x="3" y="14" width="7" height="7"></rect>
+        </svg>
+    </a>
+
+    <crusher-style-switcher
+      default-theme="minimal"
+      default-brand="#0ea5e9"
+      hide-themes
+      hide-theme-color></crusher-style-switcher>
+    <script type="module" src="https://cdn.jsdelivr.net/npm/crusher-ui-kit@0.1.6/dist/crusher-ui.standalone.esm.js"></script>
 
     <script>
         // Using the v0.10.1 API which is more stable for CDNs
         const { createFFmpeg, fetchFile } = FFmpeg;
         let ffmpeg = null;
-        
+
         const statusEl = document.getElementById('status');
         const spinner = document.getElementById('spinner');
         const downloadsEl = document.getElementById('downloads');
+        const downloadTpl = document.getElementById('download-btn-template');
 
-        const log = (msg, type = 'info') => {
-            let colorClass = type === 'success' ? 'text-green-600 dark:text-green-400' : 
-                             type === 'error' ? 'text-red-600 dark:text-red-400' : '';
-            const div = document.createElement('div');
-            div.innerHTML = `<span class="${colorClass}">${msg}</span>`;
-            div.classList.add('mb-1');
-            statusEl.appendChild(div);
+        function setSpinner(visible) {
+            spinner.dataset.visible = visible ? 'true' : 'false';
+        }
+
+        function clearStatus() {
+            statusEl.replaceChildren();
+        }
+
+        function log(msg, type = 'info') {
+            const line = document.createElement('div');
+            line.className = 'v2a-log-line';
+            if (type === 'success') line.classList.add('v2a-log-success');
+            else if (type === 'error') line.classList.add('v2a-log-error');
+            line.textContent = msg;
+            statusEl.appendChild(line);
             statusEl.scrollTop = statusEl.scrollHeight;
         }
 
         const loadFFmpeg = async () => {
             if (ffmpeg) return;
-            
+
             ffmpeg = createFFmpeg({
                 log: false,
                 corePath: 'https://unpkg.com/@ffmpeg/core@0.10.0/dist/ffmpeg-core.js'
             });
 
-            spinner.classList.remove('hidden');
+            setSpinner(true);
             try {
-                log("Downloading engine files (v0.10)...");
+                log('Downloading engine files (v0.10)...');
                 await ffmpeg.load();
-                statusEl.innerHTML = ""; 
-                log("✅ Engine Ready. Please select a video file.", 'success');
+                clearStatus();
+                log('Engine Ready. Please select a video file.', 'success');
             } catch (e) {
-                log("❌ Engine Failed: " + e.message, 'error');
+                log('Engine Failed: ' + e.message, 'error');
                 console.error(e);
             }
-            spinner.classList.add('hidden');
+            setSpinner(false);
         };
 
         const transcode = async ({ target: { files } }) => {
             if (files.length === 0) return;
-            downloadsEl.innerHTML = '';
-            statusEl.innerHTML = ''; 
-            
+            downloadsEl.replaceChildren();
+            clearStatus();
+
             if (!ffmpeg || !ffmpeg.isLoaded()) {
-                 await loadFFmpeg();
+                await loadFFmpeg();
             }
-            
+
             // Double check if load succeeded
             if (!ffmpeg.isLoaded()) return;
 
-            spinner.classList.remove('hidden');
+            setSpinner(true);
 
             for (const file of files) {
                 const name = file.name;
-                const outputName = name.replace(/\.[^/.]+$/, "") + ".mp3";
-                
-                log(`Processing: <b>${name}</b>...`);
+                const outputName = name.replace(/\.[^/.]+$/, '') + '.mp3';
+
+                log(`Processing: ${name}...`);
 
                 try {
                     // Write file to memory
@@ -228,155 +207,33 @@
                     // Read result
                     const data = ffmpeg.FS('readFile', outputName);
 
-                    // Create download link
+                    // Create download link from template
+                    const fragment = downloadTpl.content.cloneNode(true);
+                    const link = fragment.querySelector('a');
+                    const label = fragment.querySelector('.v2a-download-label');
                     const url = URL.createObjectURL(new Blob([data.buffer], { type: 'audio/mp3' }));
-                    const downloadBtn = document.createElement('a');
-                    downloadBtn.href = url;
-                    downloadBtn.download = outputName;
-                    downloadBtn.className = "block w-full bg-sky-500 hover:bg-sky-600 text-white font-bold py-3 px-4 rounded-lg transition-colors text-center shadow-sm flex items-center justify-center gap-2";
-                    downloadBtn.innerHTML = `
-                        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" x2="12" y1="15" y2="3"/></svg>
-                        Download ${outputName}
-                    `;
-                    downloadsEl.appendChild(downloadBtn);
-                    log(`✅ Finished: ${outputName}`, 'success');
+                    link.href = url;
+                    link.download = outputName;
+                    label.textContent = `Download ${outputName}`;
+                    downloadsEl.appendChild(fragment);
+
+                    log(`Finished: ${outputName}`, 'success');
 
                     // Cleanup memory
                     try {
                         ffmpeg.FS('unlink', name);
                         ffmpeg.FS('unlink', outputName);
-                    } catch(e) {} // ignore unlink errors
-
+                    } catch (e) { /* ignore unlink errors */ }
                 } catch (err) {
-                    log(`❌ Error converting ${name}: ${err.message}`, 'error');
+                    log(`Error converting ${name}: ${err.message}`, 'error');
                 }
             }
-            spinner.classList.add('hidden');
+            setSpinner(false);
         };
 
         document.getElementById('uploader').addEventListener('change', transcode);
 
-        // Theme Toggle
-        const themeToggleBtn = document.getElementById('theme-toggle');
-        const sunIcon = document.getElementById('theme-toggle-sun-icon');
-        const moonIcon = document.getElementById('theme-toggle-moon-icon');
-
-        const updateIcons = () => {
-            if (document.documentElement.classList.contains('dark')) {
-                sunIcon.classList.remove('hidden');
-                moonIcon.classList.add('hidden');
-            } else {
-                sunIcon.classList.add('hidden');
-                moonIcon.classList.remove('hidden');
-            }
-        };
-
-        themeToggleBtn.addEventListener('click', () => {
-            document.documentElement.classList.toggle('dark');
-            localStorage.theme = document.documentElement.classList.contains('dark') ? 'dark' : 'light';
-            updateIcons();
-        });
-        updateIcons();
-
-        log("Select a video file to load the conversion engine.");
+        log('Select a video file to load the conversion engine.');
     </script>
-    
-    <a href="https://tools.muhammadhassaanjaved.com/" id="hub-bubble" title="View All Tools" target="_blank" rel="noopener noreferrer">
-        <svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-            <rect x="3" y="3" width="7" height="7"></rect>
-            <rect x="14" y="3" width="7" height="7"></rect>
-            <rect x="14" y="14" width="7" height="7"></rect>
-            <rect x="3" y="14" width="7" height="7"></rect>
-        </svg>
-    </a>
-    <crusher-style-switcher default-theme="minimal" hide-themes hide-theme-color></crusher-style-switcher>
-    <script id="crusher-minimal-mode-lock">
-      (() => {
-        const root = document.documentElement;
-        const CONTRACT_VERSION = 'style-switcher-v3';
-        const DEFAULT_BRAND = '#0ea5e9';
-        const SWITCHER_COLORS = {
-          sky: '#0ea5e9',
-          emerald: '#10b981',
-          violet: '#8b5cf6',
-          orange: '#f97316',
-          pink: '#ec4899'
-        };
-        const readPrefs = () => {
-          try { return JSON.parse(localStorage.getItem('crusher_prefs') || '{}'); } catch { return {}; }
-        };
-        const writePrefs = (prefs) => {
-          try { localStorage.setItem('crusher_prefs', JSON.stringify(prefs)); } catch {}
-        };
-        const normalizeMode = (mode) => mode === 'dark' ? 'dark' : 'light';
-        const ensurePrefs = (forcedMode) => {
-          const prefs = readPrefs();
-          const currentContract = (() => { try { return localStorage.getItem('crusher_tools_mode_contract'); } catch { return ''; } })();
-          if (currentContract !== CONTRACT_VERSION) {
-            prefs.mode = 'light';
-            try { localStorage.setItem('crusher_tools_mode_contract', CONTRACT_VERSION); } catch {}
-          } else if (forcedMode === 'dark' || forcedMode === 'light') {
-            prefs.mode = forcedMode;
-          } else {
-            prefs.mode = normalizeMode(prefs.mode);
-          }
-          prefs.theme = 'minimal';
-          if (!prefs.brand) prefs.brand = DEFAULT_BRAND;
-          try { localStorage.theme = prefs.mode; } catch {}
-          writePrefs(prefs);
-          return prefs;
-        };
-        const sync = (forcedMode) => {
-          const prefs = ensurePrefs(forcedMode);
-          root.setAttribute('data-theme', 'minimal');
-          root.setAttribute('data-theme-lock', 'minimal');
-          root.setAttribute('data-mode', prefs.mode);
-          root.classList.toggle('dark', prefs.mode === 'dark');
-          root.style.setProperty('--crusher-color-brand-primary', prefs.brand || DEFAULT_BRAND);
-        };
-        const patchSwitcher = async () => {
-          await customElements.whenDefined('crusher-style-switcher');
-          const switcher = document.querySelector('crusher-style-switcher');
-          if (!switcher) return;
-          switcher.hideThemes = true;
-          switcher.hideThemeColor = true;
-          switcher.colors = SWITCHER_COLORS;
-          switcher._cacheSwatchColors?.();
-          switcher.requestUpdate?.();
-          await switcher.updateComplete?.catch?.(() => {});
-          const applyShadowFixes = () => {
-            const shadow = switcher.shadowRoot;
-            if (!shadow) return;
-            shadow.querySelectorAll('button').forEach((button) => { button.style.cursor = 'pointer'; });
-            shadow.querySelectorAll('.colors').forEach((row) => {
-              row.style.flexWrap = 'nowrap';
-              row.style.justifyContent = 'flex-start';
-              row.style.gap = '0.45rem';
-            });
-            shadow.querySelectorAll('.swatch').forEach((swatch) => {
-              swatch.style.inlineSize = '1.65rem';
-              swatch.style.blockSize = '1.65rem';
-              swatch.style.flex = '0 0 auto';
-              swatch.style.cursor = 'pointer';
-            });
-          };
-          applyShadowFixes();
-          const originalRequestUpdate = switcher.requestUpdate?.bind(switcher);
-          if (originalRequestUpdate && !switcher.__crusherToolsPatched) {
-            switcher.__crusherToolsPatched = true;
-            switcher.requestUpdate = (...args) => {
-              const result = originalRequestUpdate(...args);
-              requestAnimationFrame(applyShadowFixes);
-              return result;
-            };
-          }
-        };
-        sync();
-        window.addEventListener('crusher:themechange', (event) => sync(event.detail?.mode));
-        document.getElementById('theme-toggle')?.addEventListener('click', () => requestAnimationFrame(() => sync()));
-        patchSwitcher();
-      })();
-    </script>
-    <script type="module" src="https://cdn.jsdelivr.net/npm/crusher-ui-kit@0.1.3/dist/crusher-ui.standalone.esm.js"></script>
 </body>
 </html>
