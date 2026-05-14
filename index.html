@@ -8,6 +8,19 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Video to Audio Converter</title>
+    <!-- SEO-META-START -->
+    <meta name="description" content="Extract MP3 audio from video files locally in your browser.">
+    <meta name="theme-color" content="#0ea5e9">
+    <link rel="canonical" href="https://crusher-labs.github.io/video-to-audio-converter/">
+    <meta property="og:type" content="website">
+    <meta property="og:site_name" content="Web Utility Tools by CRUSHER">
+    <meta property="og:title" content="Video to Audio Converter — Web Utility Tools by CRUSHER">
+    <meta property="og:description" content="Extract MP3 audio from video files locally in your browser.">
+    <meta property="og:url" content="https://crusher-labs.github.io/video-to-audio-converter/">
+    <meta name="twitter:card" content="summary">
+    <meta name="twitter:title" content="Video to Audio Converter — Web Utility Tools by CRUSHER">
+    <meta name="twitter:description" content="Extract MP3 audio from video files locally in your browser.">
+    <!-- SEO-META-END -->
     <link rel="icon" href="data:,">
     <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net https://cdnjs.cloudflare.com https://unpkg.com; style-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net https://fonts.googleapis.com; font-src https://fonts.gstatic.com; img-src 'self' data: blob:; media-src 'self' blob:; connect-src 'self' https://unpkg.com https://api.web3forms.com; worker-src 'self' blob:; object-src 'none'; base-uri 'self';">
 
@@ -84,11 +97,6 @@
         line-height: 1.05;
         letter-spacing: -0.025em;
     }
-    .crusher-tool-control:focus-visible {
-        border-color: var(--crusher-color-brand-primary);
-        box-shadow: 0 0 0 4px color-mix(in srgb, var(--crusher-color-brand-primary) 18%, transparent);
-        outline: none;
-    }
     .crusher-tool-action {
         transition: transform 0.2s ease, box-shadow 0.2s ease, background 0.2s ease;
     }
@@ -96,10 +104,6 @@
         transform: translateY(-1px);
         box-shadow: 0 8px 20px -8px color-mix(in srgb, var(--crusher-color-brand-primary) 35%, transparent);
     }
-    /* End premium polish */
-    body.crusher-tool-page-marker { /* sentinel for re-runs */
-    }
-    /* End sentinel */
 
         .v2a-stack { display: grid; gap: var(--crusher-spacing-6); max-width: 36rem; margin-inline: auto; }
         .v2a-section { padding: var(--crusher-spacing-6); display: grid; gap: var(--crusher-spacing-5); }
