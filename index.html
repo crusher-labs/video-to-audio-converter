@@ -15,7 +15,7 @@
 
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@500&family=Fraunces:ital,opsz,wght@1,9..144,400;1,9..144,500&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@500&family=Fraunces:ital,opsz,wght@0,9..144,400;0,9..144,500;1,9..144,400;1,9..144,500&display=swap" rel="stylesheet">
 
     <script src="https://unpkg.com/@ffmpeg/ffmpeg@0.10.1/dist/ffmpeg.min.js"></script>
 
@@ -49,11 +49,12 @@
     .crusher-tool-title {
         font-family: 'Fraunces', 'Georgia', serif;
         font-optical-sizing: auto;
+        font-variation-settings: 'opsz' 48, 'SOFT' 30;
         font-weight: 500;
-        font-style: italic;
-        font-size: clamp(2.25rem, 5vw, 3.5rem);
+        font-style: normal;
+        font-size: clamp(2rem, 4.5vw, 3rem);
         line-height: 1.05;
-        letter-spacing: -0.02em;
+        letter-spacing: -0.025em;
     }
     .crusher-tool-control:focus-visible {
         border-color: var(--crusher-color-brand-primary);
