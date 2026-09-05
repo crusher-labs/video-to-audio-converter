@@ -1,5 +1,7 @@
-@AGENTS.md
+# Video to Audio Converter (moved)
 
-## Notes
+This tool moved to the consolidated tools site on 2026-09-03. **Do not edit anything here.**
 
-- World page (dubbing deck). Conventions: workspace `AGENTS.md`, `docs/design-language.md` (tools section), the atlas. Verify at 1440 and 390 with Playwright `setViewportSize` before shipping.
+- Live: <https://tools.muhammadhassaanjaved.com/video-to-audio-converter/>
+- Source: `tools-hub` repo, `video-to-audio-converter/index.html` (workspace path `x:/crusher-labs/repos/tools-hub/video-to-audio-converter/`)
+- This repo serves a redirect stub only, and is kept for its history.
